@@ -1,0 +1,1 @@
+Experimenting with making own jquery slider control, arbitrary sized elements

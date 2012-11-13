@@ -1,0 +1,340 @@
+<!doctype html>
+<html>
+  <head>
+    <title>viewSlider demo</title>
+    <meta charset="utf-8" />
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+    <script src="viewSlider.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
+      
+      body {
+        background: #f0f0f0;
+        padding: 2em 5em;
+        font-family: sans-serif;
+        color: #666;
+      }
+      
+      h1, h2 {
+        margin: 1em 0;
+      }
+      
+      #viewport {
+        background: #f6faff;
+        border: 1px solid #bde;
+        box-shadow: inset 0 5px 10px rgba( 0, 0, 0, 0.2 );        
+        width: 640px;
+        height: 480px;
+        position: relative;    
+        overflow: hidden;        
+      }
+      
+      #viewport ul {
+        list-style: none;
+        display: table-row;
+        position: absolute;
+      }
+      
+      #viewport li {
+        display: table-cell;
+        vertical-align: middle;
+      }
+      
+      #viewport div {
+        display: block;        
+        float: left;
+        position: relative;   
+        border-radius: 5px;
+        box-shadow: 0 5px 10px rgba( 0, 0, 0, 0.2 );      
+      }
+      
+      #viewport li span {
+        display: block;
+        background: rgba( 255, 255, 255, 0.9 );    
+        border-radius: 10px;
+        height: 20px;
+        width: 20px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        font-size: 90%;
+        margin-left: -10px;
+        margin-top: -10px;
+        line-height: 20px;
+        text-align: center;
+        font-weight: bold;
+      }
+      
+      #controls a {
+        background: #666;
+        border: 2px solid #333;
+        color: #eee;
+        font-weight: bold;
+        font-size: 200%;
+        padding: 5px;
+        padding-top: 0;
+        border-radius: 5px;
+        text-decoration: none;
+      }
+      
+      #controls a:hover {
+        background: #444;
+        color: gold;
+      }
+    </style>
+    <script>
+      $(document).ready(function(){
+        function debug( value ) {    
+          if( value === "" ) return;        
+          $( "#debug" ).append( value + "<br />" );
+        }        
+        
+        function clear() {
+          $( "#debug" ).html( "" );
+        }
+        
+        var viewport, ul, horizontalOffset, verticalOffset;
+        var queue = [];
+        generateContent();
+        
+        function generateContent() {
+          var widthMax = 640;
+          var widthMin = 240;
+          var widthDelta = widthMax - widthMin;
+          
+          var heightMax = 480;
+          var heightMin = 240;
+          var heightDelta = heightMax - heightMin;
+          
+          var elementCount = 10;
+          
+          viewport = $( "#viewport" );
+          ul = $( "<ul />" );
+          viewport.append( ul );
+          var width = 0;
+          var height = 0;
+          
+          for( var i = 0; i < elementCount; i++ ) {            
+            var hue = Math.floor( Math.random() * 360 ) + 1;
+            var saturation = Math.floor( Math.random() * 100 ) + 1;
+            var lightness = Math.floor( Math.random() * 100 ) + 1;
+            
+            var color = 'hsl( ' + hue + ', ' + saturation + '%, ' + lightness + '% )';
+            var color2 = 'hsl( ' + hue + ', ' + saturation + '%, ' + ( lightness * 0.5 ) + '% )';
+            
+            var li = $( "<li />" );
+            var div = $( "<div><span>" + i + "</span></div>" );
+            li.append( div );
+            div.css({
+              'width': ( Math.random() * widthDelta ) + widthMin + "px",
+              'height': ( Math.random() * heightDelta ) + heightMin + "px",
+              'background': color,
+              'backgroundImage': '-moz-linear-gradient( -45deg, ' + color + ', ' + color2 + ')',
+              'border': '1px solid ' + color2
+            });
+                       
+            $( 'span', li ).css({ border: '1px solid ' + color2 });            
+            ul.append( li );
+            width += li.width();
+            height = li.height() > height ? li.height() : height;
+          }
+          
+          ul.width( width );
+          ul.height( height );  
+
+          $( "#controls" ).css({ listStyle: 'none' });
+          var left = $( "#left" );
+          left.css({
+            position: 'absolute',
+            left: viewport.offset().left - left.width() - 19 + "px",
+            top: viewport.offset().top + ( viewport.height() / 2 ) - ( left.height() / 2 )
+          });          
+          var right = $( "#right" );
+          right.css({
+            position: 'absolute',
+            left: viewport.offset().left + viewport.width() + 5 + "px",
+            top: viewport.offset().top + ( viewport.height() / 2 ) - ( left.height() / 2 )
+          });
+        }
+        
+        verticalOffset = ( viewport.height() - ul.height() ) / 2;
+       
+        ul.css({
+          top: verticalOffset + "px"
+        });
+       
+        horizontalOffset = 0;
+       
+        $( "#controls #right" ).click(function(){
+          var lis = $( "li", ul ).not( '.padding' );
+          
+          var lastLi = $( lis[ currentLi ] );
+          
+          currentLi = currentLi == lis.length - 1 ? 0 : currentLi + 1;
+          
+          var li = $( lis[ currentLi ] );
+          
+          clear();
+          debug( "Moved left" );
+          debug( "Index of current child is " + currentLi );
+          debug( "There are " + lis.length + " children" );
+          
+          oldOffset = horizontalOffset;
+          horizontalOffset -= ( ( lastLi.width() / 2 ) + ( li.width() / 2 ) );
+          
+          updateState();
+        });
+        
+        $( "#controls #left" ).click(function(){
+          var lis = $( "li", ul ).not( '.padding' );
+          
+          var lastLi = $( lis[ currentLi ] );
+          
+          currentLi = currentLi == 0 ? lis.length - 1 : currentLi - 1;
+          
+          var li = $( lis[ currentLi ] );
+          
+          clear();
+          debug( "Moved right" );
+          debug( "Index of current child is " + currentLi );
+          debug( "There are " + lis.length + " children" );
+            
+          oldOffset = horizontalOffset;
+          horizontalOffset += ( ( lastLi.width() / 2 ) + ( li.width() / 2 ) );
+          
+          updateState();
+        });
+        
+        function updateState() {          
+          var lis = $( "li", ul );
+          
+          var leftPaddingWidth = 0;
+          $( '.padding.left', ul ).each(function(){
+            leftPaddingWidth += $( this ).width();
+          });
+          
+          if( horizontalOffset <= ul.width() * -1 ) {
+            debug( "Items are scrolled completely off left side" );
+            
+            oldOffset += ul.width();
+            horizontalOffset += ul.width();
+          }
+          
+          oldOffset += leftPaddingWidth;
+          horizontalOffset += leftPaddingWidth;
+          
+          if( horizontalOffset >= viewport.width() ) {
+            debug( "Items are scrolled completely off right side" );
+            
+            oldOffset -= ul.width();
+            horizontalOffset -= ul.width();
+          }            
+
+          $( '.padding', ul ).remove();
+          
+          var padLeft = horizontalOffset > 0;
+          var padRight = horizontalOffset < ( ul.width() - viewport.width() ) * -1;
+          
+          var padLeftAmount = padLeft ? horizontalOffset : 0;
+          var padRightAmount = padRight ? ( ul.width() - viewport.width() + horizontalOffset ) * -1 : 0;
+          
+          debug( padLeft ? "Need to repeat list at left by " + padLeftAmount : "" );
+          debug( padRight ? "Need to repeat list at right by " + padRightAmount : "" );
+          
+          var leftBlocks = 0;
+          var rightBlocks = 0;          
+          
+          var leftCount = 0;
+          var rightCount = 0;
+          
+          var leftPadders = [];
+          var rightPadders = [];
+          
+          if( padLeft ) {
+            var startLeftIndex = lis.length - 1;
+            var leftIndex = startLeftIndex;
+            debug( "Padding from left starting with " + startLeftIndex );
+            var leftWidth = 0;
+            
+            while( leftWidth < padLeftAmount ) {
+              leftWidth += $( lis[ leftIndex ] ).width();
+              leftPadders.push( lis[ leftIndex ] );
+              leftIndex--;
+              leftCount++;
+              if( leftIndex < 0 ) leftIndex = startLeftIndex;
+            }
+            debug( "Needed " + leftCount + " blocks to pad" );
+          }
+          
+          if( padRight ) {
+            var rightIndex = 0;
+            debug( "Padding from right starting with " + rightIndex );
+            var rightWidth = 0;
+            
+            while( rightWidth < padRightAmount ) {
+              rightWidth += $( lis[ rightIndex ] ).width();
+              rightPadders.push( lis[ rightIndex ] );
+              rightIndex++;
+              rightCount++;
+              if( rightIndex > ( lis.length - 1 ) ) rightIndex = 0;
+            }            
+            debug( "Needed " + rightCount + " blocks to pad" );
+          }
+          
+          for( var leftKey in leftPadders ) {
+            var leftPadder = $( leftPadders[ leftKey ] );
+            ul.prepend( leftPadder.clone().addClass( 'padding' ).addClass( 'left' ) );
+            horizontalOffset -= leftPadder.width();
+            oldOffset -= leftPadder.width();
+          }
+          
+          for( var rightKey in rightPadders ) {
+            var rightPadder = $( rightPadders[ rightKey ] );
+            ul.append( rightPadder.clone().addClass( 'padding' ).addClass( 'right' ) );
+          }
+                   
+          var oldOffsetValue = oldOffset + "px";
+          
+          ul.css({
+            left: oldOffsetValue
+          });           
+          
+          ul.animate({
+            left: horizontalOffset + "px"
+          });  
+
+          debug( "viewport.width(): " + viewport.width() );
+          debug( "viewport.height(): " + viewport.height() );
+          debug( "ul.width(): " + ul.width() );
+          debug( "ul.height(): " + ul.height() );
+          debug( "verticalOffset: " + verticalOffset );
+          debug( "horizontalOffset: " + horizontalOffset );
+        }
+        
+        var currentLi = 0;
+        
+        horizontalOffset = ( viewport.width() / 2 ) - ( $( $( "li", ul )[ currentLi ] ).width() / 2 );
+        var oldOffset = horizontalOffset;
+        
+        updateState();
+              
+        $("#viewport").viewSlider({
+        });
+      });	
+    </script>    
+  </head>
+  <body>
+		<h1>Slider demo</h1>
+    <div id="viewport">
+		</div>  
+    <ul id="controls">
+      <li><a id="left" href="javascript:void(0);">&larr;</a></li>
+      <li><a id="right" href="javascript:void(0);">&rarr;</a></li>
+    </ul>
+    <h2>Debug</h2>
+    <p id="debug"></p>
+  </body>
+</html>
